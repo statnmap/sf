@@ -36,7 +36,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
 # PROJ:
 # was: ENV PROJ_VERSION 4.9.3
 # http://download.osgeo.org/proj/proj-5.0.0RC3.tar.gz
-ENV PROJ_VERSION 5.0.0RC3
+ENV PROJ_VERSION 5.0.1
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 RUN wget http://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz \
@@ -50,7 +50,7 @@ RUN wget http://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz \
 
 # install proj-datumgrid:
 RUN cd /usr/local/share/proj \
-  && wget http://download.osgeo.org/proj/proj-datumgrid-1.6.zip \
+  && wget http://download.osgeo.org/proj/proj-datumgrid-1.7.zip \
   && unzip proj-datumgrid*zip \
   && rm proj-datumgrid*zip \
   && cd -
@@ -70,8 +70,8 @@ RUN wget http://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
 
 # GDAL:
 
-ENV GDAL_VERSION 2.2.3
-ENV GDAL_VERSION_NAME 2.2.3
+ENV GDAL_VERSION 2.3.0
+ENV GDAL_VERSION_NAME 2.3.0
 
 RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION_NAME}.tar.gz \
   && tar -xf gdal-${GDAL_VERSION_NAME}.tar.gz \
@@ -102,12 +102,18 @@ RUN svn checkout svn://scm.r-forge.r-project.org/svnroot/rgdal/
 # or:
 # svn checkout svn+ssh://edzer@scm.r-forge.r-project.org/svnroot/rgdal/
 RUN R CMD build rgdal/pkg --no-build-vignettes
+
 RUN R CMD INSTALL rgdal_*.tar.gz 
 
 RUN git clone  https://github.com/r-spatial/sf.git
-
 RUN R CMD build --no-build-vignettes --no-manual sf
+RUN R CMD INSTALL sf_*gz
 
-# RUN R CMD check --no-build-vignettes --no-manual --as-cran --run-dontrun sf_*tar.gz
+RUN apt-get install -y unixodbc-dev
+
+RUN Rscript -e 'install.packages(c("lwgeom", "tmap", "pool", "odbc", "mapview"), repos = "https://cloud.r-project.org")'
+
+#RUN R CMD check --no-build-vignettes --no-manual --as-cran --run-dontrun sf_*tar.gz
+RUN R CMD check --no-build-vignettes --no-manual --as-cran sf_*tar.gz
 
 CMD ["/bin/bash"]
